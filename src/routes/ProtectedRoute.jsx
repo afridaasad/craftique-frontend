@@ -1,15 +1,25 @@
 import { useContext } from "react";
 import { Navigate } from "react-router-dom";
-import { AuthContext } from "../context/authContext";
+import { AuthContext } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { loading, isAuthenticated, isBuyer, isArtisan, isAdmin } =
     useContext(AuthContext);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles.length === 0) {
+    return children;
   }
 
   const roleCheck = {
@@ -21,7 +31,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const hasAccess = allowedRoles.some((role) => roleCheck[role]);
 
   if (!hasAccess) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
