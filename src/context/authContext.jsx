@@ -8,18 +8,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize from localStorage
+  const logout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setUser(null);
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
+
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUser(decoded);
-      } catch (err) {
-        console.error("Invalid token");
+        const currentTime = Date.now() / 1000;
+
+        if (decoded.exp && decoded.exp > currentTime) {
+          setUser(decoded);
+        } else {
+          logout();
+        }
+      } catch {
         logout();
       }
     }
+
     setLoading(false);
   }, []);
 
@@ -38,20 +50,15 @@ export const AuthProvider = ({ children }) => {
       const decoded = jwtDecode(access);
       setUser(decoded);
 
-      return { success: true };
+      return { success: true, user: decoded };
     } catch (error) {
       return {
         success: false,
         message:
-          error.response?.data?.detail || "Login failed. Try again.",
+          error.response?.data?.detail ||
+          "Login failed. Please try again.",
       };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    setUser(null);
   };
 
   return (
@@ -62,9 +69,9 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
-        isBuyer: user?.is_buyer,
-        isArtisan: user?.is_artisan,
-        isAdmin: user?.is_admin,
+        isBuyer: user?.is_buyer || false,
+        isArtisan: user?.is_artisan || false,
+        isAdmin: user?.is_admin || false,
       }}
     >
       {children}
