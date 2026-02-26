@@ -1,81 +1,92 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from "react";
+import API from "../../services/api";
 
-export default function Cart() {
-    const [cartItems, setCartItems] = useState([
-        { id: 1, name: 'Handmade Ceramic Mug', price: 25.99, quantity: 2, image: '🍶' },
-        { id: 2, name: 'Wooden Cutting Board', price: 45.50, quantity: 1, image: '🪵' },
-        { id: 3, name: 'Knitted Scarf', price: 35.00, quantity: 1, image: '🧣' },
-    ]);
+const CartPage = () => {
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    const updateQuantity = (id, newQuantity) => {
-        if (newQuantity <= 0) {
-            removeItem(id);
-        } else {
-            setCartItems(cartItems.map(item =>
-                item.id === id ? { ...item, quantity: newQuantity } : item
-            ));
-        }
-    };
+  const fetchCart = async () => {
+    try {
+      const response = await API.get("/buyer/cart/");
+      setCartItems(response.data);
+    } catch {
+      setError("Failed to load cart.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const removeItem = (id) => {
-        setCartItems(cartItems.filter(item => item.id !== id));
-    };
+  useEffect(() => {
+    fetchCart();
+  }, []);
 
-    const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const handleRemove = async (id) => {
+    try {
+      await API.delete(`/buyer/cart/${id}/`);
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      alert("Failed to remove item.");
+    }
+  };
 
-    return (
-        <div className="cart-container" style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            <h1>Shopping Cart</h1>
-            
-            {cartItems.length === 0 ? (
-                <p>Your cart is empty</p>
-            ) : (
-                <>
-                    <div className="cart-items">
-                        {cartItems.map(item => (
-                            <div key={item.id} style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '10px',
-                                borderBottom: '1px solid #ddd'
-                            }}>
-                                <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: '24px' }}>{item.image}</span>
-                                    <p><strong>{item.name}</strong></p>
-                                    <p>${item.price}</p>
-                                </div>
-                                <div>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={item.quantity}
-                                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
-                                        style={{ width: '50px' }}
-                                    />
-                                    <button onClick={() => removeItem(item.id)} style={{ marginLeft: '10px' }}>
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    
-                    <div style={{ marginTop: '20px', fontSize: '18px', fontWeight: 'bold' }}>
-                        <p>Total: ${total.toFixed(2)}</p>
-                        <button style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }}>
-                            Checkout
-                        </button>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-}
+  if (loading) return <div className="p-6">Loading cart...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+
+  const total = cartItems.reduce(
+    (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
+    0
+  );
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-6">My Cart</h1>
+
+      {cartItems.length === 0 ? (
+        <p>Your cart is empty.</p>
+      ) : (
+        <>
+          <div className="space-y-4">
+            {cartItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 border p-4 rounded"
+              >
+                {item.product.image && (
+                  <img
+                    src={item.product.image}
+                    alt={item.product.title}
+                    className="w-24 h-24 object-cover rounded"
+                  />
+                )}
+
+                <div className="flex-1">
+                  <h2 className="font-semibold">
+                    {item.product.title}
+                  </h2>
+                  <p>₹ {item.product.price}</p>
+                  <p>Quantity: {item.quantity}</p>
+                </div>
+
+                <button
+                  onClick={() => handleRemove(item.id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-right">
+            <h2 className="text-xl font-bold">
+              Total: ₹ {total.toFixed(2)}
+            </h2>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default CartPage;

@@ -1,81 +1,91 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 
 const ProductDetailsPage = () => {
-    const { productId } = useParams();
-    const [quantity, setQuantity] = useState(1);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated, isBuyer } = useContext(AuthContext);
 
-    // Demo product data
-    const product = {
-        id: productId || 1,
-        name: 'Handcrafted Wooden Vase',
-        price: 45.99,
-        rating: 4.5,
-        reviews: 128,
-        description: 'Beautiful handmade wooden vase, perfect for any home decor.',
-        image: '/images/product-demo.jpg',
-        inStock: true,
-        category: 'Home Decor',
-        artisan: 'Master Craftsman',
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await API.get(`/products/${id}/`);
+        setProduct(response.data);
+      } catch (err) {
+        setError("Failed to load product.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const handleAddToCart = () => {
-        console.log(`Added ${quantity} of ${product.name} to cart`);
-    };
+    fetchProduct();
+  }, [id]);
 
-    const handleQuantityChange = (e) => {
-        setQuantity(Math.max(1, parseInt(e.target.value)));
-    };
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
 
-    return (
-        <div className="product-details-page">
-            <div className="product-container">
-                <div className="product-image">
-                    <img src={product.image} alt={product.name} />
-                </div>
+    if (!isBuyer) {
+      alert("Only buyers can add to cart.");
+      return;
+    }
 
-                <div className="product-info">
-                    <h1>{product.name}</h1>
-                    
-                    <div className="rating">
-                        <span className="stars">★★★★☆</span>
-                        <span className="reviews">({product.reviews} reviews)</span>
-                    </div>
+    try {
+      setAdding(true);
+      await API.post("/buyer/cart/", {
+        product_id: product.id,
+        quantity: 1,
+      });
+      alert("Added to cart!");
+    } catch (err) {
+      alert("Failed to add to cart.");
+    } finally {
+      setAdding(false);
+    }
+  };
 
-                    <div className="price">
-                        <h2>${product.price}</h2>
-                        <span className={product.inStock ? 'in-stock' : 'out-of-stock'}>
-                            {product.inStock ? 'In Stock' : 'Out of Stock'}
-                        </span>
-                    </div>
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+  if (!product) return null;
 
-                    <p className="description">{product.description}</p>
+  return (
+    <div className="p-6 max-w-3xl mx-auto">
+      {product.image && (
+        <img
+          src={product.image}
+          alt={product.title}
+          className="w-full h-96 object-cover mb-6 rounded"
+        />
+      )}
 
-                    <div className="artisan-info">
-                        <p><strong>Artisan:</strong> {product.artisan}</p>
-                        <p><strong>Category:</strong> {product.category}</p>
-                    </div>
+      <h1 className="text-2xl font-semibold mb-2">
+        {product.title}
+      </h1>
 
-                    <div className="purchase-section">
-                        <label htmlFor="quantity">Quantity:</label>
-                        <input
-                            id="quantity"
-                            type="number"
-                            min="1"
-                            value={quantity}
-                            onChange={handleQuantityChange}
-                        />
-                        <button 
-                            onClick={handleAddToCart}
-                            disabled={!product.inStock}
-                        >
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+      <p className="mb-4 text-gray-600">{product.description}</p>
+
+      <p className="text-xl font-bold mb-4">
+        ₹ {product.price}
+      </p>
+
+      <button
+        onClick={handleAddToCart}
+        disabled={adding}
+        className="bg-black text-white px-6 py-2 rounded disabled:opacity-50"
+      >
+        {adding ? "Adding..." : "Add to Cart"}
+      </button>
+    </div>
+  );
 };
 
 export default ProductDetailsPage;
