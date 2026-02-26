@@ -52,6 +52,29 @@ const ProductDetailsPage = () => {
       setAdding(false);
     }
   };
+  const handleAddToWishlist = async () => {
+  if (!isAuthenticated) {
+    navigate("/login");
+    return;
+  }
+
+  if (!isBuyer) {
+    alert("Only buyers can add to wishlist.");
+    return;
+  }
+
+  try {
+    await API.post("/buyer/wishlist/", {
+      product_id: product.id,
+    });
+    alert("Added to wishlist!");
+  } catch (err) {
+    alert(
+      err.response?.data?.detail ||
+      "Already in wishlist or failed."
+    );
+  }
+};
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
@@ -84,6 +107,12 @@ const ProductDetailsPage = () => {
       >
         {adding ? "Adding..." : "Add to Cart"}
       </button>
+      <button
+  onClick={handleAddToWishlist}
+  className="bg-gray-800 text-white px-6 py-2 rounded ml-4"
+>
+  Add to Wishlist
+</button>
     </div>
   );
 };
