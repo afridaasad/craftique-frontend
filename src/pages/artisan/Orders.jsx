@@ -1,98 +1,124 @@
-import React, { useState } from 'react';
-import { Badge, Table, Button, Modal, Empty } from 'antd';
-import { EyeOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { useEffect, useState } from "react";
+import API from "../../services/api";
 
-const Orders = () => {
-    const [orders, setOrders] = useState([
-        {
-            id: 'ORD001',
-            customer: 'John Doe',
-            product: 'Handmade Wooden Chair',
-            amount: 15000,
-            status: 'completed',
-            date: '2024-01-15',
-        },
-        {
-            id: 'ORD002',
-            customer: 'Jane Smith',
-            product: 'Ceramic Vase Set',
-            amount: 8500,
-            status: 'pending',
-            date: '2024-01-18',
-        },
-        {
-            id: 'ORD003',
-            customer: 'Mike Johnson',
-            product: 'Leather Handbag',
-            amount: 12000,
-            status: 'processing',
-            date: '2024-01-19',
-        },
-    ]);
+const ArtisanOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
 
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+  const fetchOrders = async () => {
+    try {
+      const res = await API.get("/artisan/orders/");
+      setOrders(res.data);
+    } catch {
+      setError("Failed to load artisan orders.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const showDetails = (order) => {
-        setSelectedOrder(order);
-        setIsModalVisible(true);
-    };
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-    const getStatusBadge = (status) => {
-        const statusConfig = {
-            completed: { color: 'green', icon: <CheckCircleOutlined /> },
-            pending: { color: 'orange', icon: <ClockCircleOutlined /> },
-            processing: { color: 'blue', icon: <ClockCircleOutlined /> },
-        };
-        return <Badge status={statusConfig[status].color} text={status.toUpperCase()} />;
-    };
+  const handleStatusUpdate = async (orderId, status) => {
+    try {
+      setUpdatingId(orderId);
 
-    const columns = [
-        { title: 'Order ID', dataIndex: 'id', key: 'id' },
-        { title: 'Customer', dataIndex: 'customer', key: 'customer' },
-        { title: 'Product', dataIndex: 'product', key: 'product' },
-        { title: 'Amount', dataIndex: 'amount', key: 'amount', render: (val) => `₹${val}` },
-        { title: 'Status', dataIndex: 'status', key: 'status', render: (status) => getStatusBadge(status) },
-        { title: 'Date', dataIndex: 'date', key: 'date' },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (_, record) => (
-                <Button type="primary" icon={<EyeOutlined />} onClick={() => showDetails(record)}>
-                    View
-                </Button>
-            ),
-        },
-    ];
+      await API.patch(`/artisan/orders/${orderId}/update-status/`, {
+        status,
+      });
 
-    return (
-        <div style={{ padding: '24px' }}>
-            <h1>My Orders</h1>
-            {orders.length > 0 ? (
-                <Table columns={columns} dataSource={orders} rowKey="id" pagination={{ pageSize: 10 }} />
-            ) : (
-                <Empty description="No orders found" />
-            )}
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, status } : order
+        )
+      );
+    } catch {
+      setError("Failed to update order status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
-            <Modal
-                title="Order Details"
-                visible={isModalVisible}
-                onCancel={() => setIsModalVisible(false)}
-                footer={null}
-            >
-                {selectedOrder && (
-                    <div>
-                        <p><strong>Order ID:</strong> {selectedOrder.id}</p>
-                        <p><strong>Customer:</strong> {selectedOrder.customer}</p>
-                        <p><strong>Product:</strong> {selectedOrder.product}</p>
-                        <p><strong>Amount:</strong> ₹{selectedOrder.amount}</p>
-                        <p><strong>Status:</strong> {getStatusBadge(selectedOrder.status)}</p>
-                        <p><strong>Date:</strong> {selectedOrder.date}</p>
-                    </div>
-                )}
-            </Modal>
+  if (loading) return <div className="p-6">Loading orders...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-6">Artisan Orders</h1>
+
+      {orders.length === 0 ? (
+        <p>No orders yet.</p>
+      ) : (
+        <div className="space-y-6">
+          {orders.map((order) => (
+            <div key={order.id} className="border rounded p-5 space-y-4">
+              
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-semibold">Order #{order.id}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(order.created_at).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    Buyer: {order.buyer_name}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="font-medium">
+                    Status: {order.status}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 space-y-3">
+                {order.items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between text-sm"
+                  >
+                    <span>
+                      {item.product.title} × {item.quantity}
+                    </span>
+                    <span>
+                      ₹ {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {order.status === "pending" && (
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={() =>
+                      handleStatusUpdate(order.id, "approved")
+                    }
+                    disabled={updatingId === order.id}
+                    className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleStatusUpdate(order.id, "denied")
+                    }
+                    disabled={updatingId === order.id}
+                    className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                  >
+                    Deny
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
-export default Orders;
+export default ArtisanOrders;

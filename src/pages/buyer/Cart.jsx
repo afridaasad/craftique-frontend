@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
 const CartPage = () => {
+  const navigate = useNavigate();
+
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const fetchCart = async () => {
     try {
@@ -26,7 +36,36 @@ const CartPage = () => {
       await API.delete(`/buyer/cart/${id}/`);
       setCartItems((prev) => prev.filter((item) => item.id !== id));
     } catch {
-      alert("Failed to remove item.");
+      setError("Failed to remove item.");
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+
+    try {
+      setCheckoutLoading(true);
+      setCheckoutError("");
+
+      const initRes = await API.post(
+        "/buyer/cart/checkout-initiate/"
+      );
+
+      const otp = initRes.data.otp;
+
+      await API.post("/buyer/cart/checkout-confirm/", {
+        otp,
+        shipping_address: shippingAddress || "Not provided",
+        phone_number: phoneNumber || "0000000000",
+        payment_method: paymentMethod || "cod",
+      });
+
+      setCartItems([]);
+      navigate("/buyer/orders");
+    } catch (err) {
+      setCheckoutError("Checkout failed. Please try again.");
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -71,6 +110,7 @@ const CartPage = () => {
                 <button
                   onClick={() => handleRemove(item.id)}
                   className="bg-red-500 text-white px-4 py-2 rounded"
+                  disabled={checkoutLoading}
                 >
                   Remove
                 </button>
@@ -78,10 +118,51 @@ const CartPage = () => {
             ))}
           </div>
 
+          <div className="mt-8 space-y-4">
+            <textarea
+              placeholder="Shipping Address"
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              className="w-full border p-3 rounded"
+            />
+
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="w-full border p-3 rounded"
+            />
+
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full border p-3 rounded"
+            >
+              <option value="cod">Cash on Delivery</option>
+              <option value="upi">UPI</option>
+              <option value="cc">Credit Card</option>
+            </select>
+          </div>
+
           <div className="mt-6 text-right">
             <h2 className="text-xl font-bold">
               Total: ₹ {total.toFixed(2)}
             </h2>
+
+            {checkoutError && (
+              <p className="text-red-500 mt-2">
+                {checkoutError}
+              </p>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="mt-4 bg-black text-white px-6 py-3 rounded disabled:opacity-50"
+            >
+              {checkoutLoading ? "Processing..." : "Proceed to Checkout"}
+            </button>
           </div>
         </>
       )}
