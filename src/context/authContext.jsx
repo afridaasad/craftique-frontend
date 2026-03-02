@@ -1,12 +1,14 @@
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const logout = () => {
     localStorage.removeItem("access_token");
@@ -56,31 +58,38 @@ useEffect(() => {
   initializeAuth();
 }, []);
 
-  const login = async (username, password) => {
-    try {
-      const response = await API.post("/auth/login/", {
-        username,
-        password,
-      });
+const login = async (username, password) => {
+  try {
+    const response = await API.post("/auth/login/", {
+      username,
+      password,
+    });
 
-      const { access, refresh } = response.data;
+    const { access, refresh } = response.data;
 
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
+    localStorage.setItem("access_token", access);
+    localStorage.setItem("refresh_token", refresh);
 
-      const decoded = jwtDecode(access);
-      setUser(decoded);
+    const decoded = jwtDecode(access);
+    setUser(decoded);
 
-      return { success: true, user: decoded };
-    } catch (error) {
-      return {
-        success: false,
-        message:
-          error.response?.data?.detail ||
-          "Login failed. Please try again.",
-      };
+    // ROLE REDIRECT
+    if (decoded.is_buyer) {
+      navigate("/buyer/products");
+    } else if (decoded.is_artisan) {
+      navigate("/artisan/products");
     }
-  };
+
+    return { success: true, user: decoded };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error.response?.data?.detail ||
+        "Login failed. Please try again.",
+    };
+  }
+};
 
   return (
     <AuthContext.Provider
