@@ -14,26 +14,47 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
+useEffect(() => {
+  const initializeAuth = async () => {
+    const access = localStorage.getItem("access_token");
+    const refresh = localStorage.getItem("refresh_token");
 
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
+    if (!access || !refresh) {
+      setLoading(false);
+      return;
+    }
 
-        if (decoded.exp && decoded.exp > currentTime) {
-          setUser(decoded);
-        } else {
-          logout();
-        }
-      } catch {
-        logout();
+    try {
+      const decoded = jwtDecode(access);
+      const currentTime = Date.now() / 1000;
+
+      if (decoded.exp > currentTime) {
+        setUser(decoded);
+      } else {
+        // Try refresh instead of logout
+        const response = await API.post("/auth/refresh/", {
+          refresh,
+        });
+
+        const { access: newAccess, refresh: newRefresh } =
+          response.data;
+
+        localStorage.setItem("access_token", newAccess);
+        localStorage.setItem("refresh_token", newRefresh);
+
+        const newDecoded = jwtDecode(newAccess);
+        setUser(newDecoded);
       }
+    } catch (error) {
+      localStorage.clear();
+      setUser(null);
     }
 
     setLoading(false);
-  }, []);
+  };
+
+  initializeAuth();
+}, []);
 
   const login = async (username, password) => {
     try {
