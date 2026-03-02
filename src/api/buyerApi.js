@@ -18,3 +18,7 @@ export const getWishlist = () =>
 
 export const removeWishlistItem = (productId) =>
   API.delete(`/buyer/wishlist/${productId}/`);
+
+// ORDERS
+export const getBuyerOrders = () =>
+  API.get("/buyer/orders/");

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import API from "../../services/api";
+import { getBuyerOrders } from "../../api/buyerApi";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -8,7 +8,7 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await API.get("/buyer/orders/");
+      const res = await getBuyerOrders();
       setOrders(res.data);
     } catch {
       setError("Failed to load orders.");
