@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../services/api";
+import {
+  getCart,
+  removeCartItem,
+  initiateCheckout,
+  confirmCheckout,
+} from "../../api/buyerApi";
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -18,7 +23,7 @@ const CartPage = () => {
 
   const fetchCart = async () => {
     try {
-      const response = await API.get("/buyer/cart/");
+      const response = await getCart();
       setCartItems(response.data);
     } catch {
       setError("Failed to load cart.");
@@ -33,8 +38,10 @@ const CartPage = () => {
 
   const handleRemove = async (id) => {
     try {
-      await API.delete(`/buyer/cart/${id}/`);
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
+      await removeCartItem(id);
+      setCartItems((prev) =>
+        prev.filter((item) => item.id !== id)
+      );
     } catch {
       setError("Failed to remove item.");
     }
@@ -47,13 +54,10 @@ const CartPage = () => {
       setCheckoutLoading(true);
       setCheckoutError("");
 
-      const initRes = await API.post(
-        "/buyer/cart/checkout-initiate/"
-      );
-
+      const initRes = await initiateCheckout();
       const otp = initRes.data.otp;
 
-      await API.post("/buyer/cart/checkout-confirm/", {
+      await confirmCheckout({
         otp,
         shipping_address: shippingAddress || "Not provided",
         phone_number: phoneNumber || "0000000000",
@@ -62,7 +66,7 @@ const CartPage = () => {
 
       setCartItems([]);
       navigate("/buyer/orders");
-    } catch (err) {
+    } catch {
       setCheckoutError("Checkout failed. Please try again.");
     } finally {
       setCheckoutLoading(false);
@@ -73,7 +77,8 @@ const CartPage = () => {
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   const total = cartItems.reduce(
-    (sum, item) => sum + parseFloat(item.product.price) * item.quantity,
+    (sum, item) =>
+      sum + parseFloat(item.product.price) * item.quantity,
     0
   );
 
