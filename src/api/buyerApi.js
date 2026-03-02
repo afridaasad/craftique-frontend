@@ -11,3 +11,10 @@ export const initiateCheckout = () =>
 
 export const confirmCheckout = (data) =>
   API.post("/buyer/cart/checkout-confirm/", data);
+
+// WISHLIST
+export const getWishlist = () =>
+  API.get("/buyer/wishlist/");
+
+export const removeWishlistItem = (productId) =>
+  API.delete(`/buyer/wishlist/${productId}/`);

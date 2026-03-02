@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import API from "../../services/api";
+import {
+  getWishlist,
+  removeWishlistItem,
+} from "../../api/buyerApi";
 
 const WishlistPage = () => {
   const [items, setItems] = useState([]);
@@ -8,7 +11,7 @@ const WishlistPage = () => {
 
   const fetchWishlist = async () => {
     try {
-      const response = await API.get("/buyer/wishlist/");
+      const response = await getWishlist();
       setItems(response.data);
     } catch {
       setError("Failed to load wishlist.");
@@ -23,12 +26,12 @@ const WishlistPage = () => {
 
   const handleRemove = async (productId) => {
     try {
-      await API.delete(`/buyer/wishlist/${productId}/`);
+      await removeWishlistItem(productId);
       setItems((prev) =>
         prev.filter((item) => item.product.id !== productId)
       );
     } catch {
-      alert("Failed to remove item.");
+      setError("Failed to remove item.");
     }
   };
 
