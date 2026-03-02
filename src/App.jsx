@@ -1,120 +1,66 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-// ===== ACTIVE V1 PAGES (REBUILD CORE) =====
-
-// You will rebuild these pages cleanly
-// Create minimal versions if they don’t exist yet
-
-
+// Public
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-
-// PUBLIC
 import AllProducts from "./pages/buyer/AllProducts";
 import ProductDetailsPage from "./pages/buyer/ProductDetailsPage";
 
-// BUYER
+// Buyer
 import CartPage from "./pages/buyer/Cart";
 import WishlistPage from "./pages/buyer/Wishlist";
 import BuyerOrders from "./pages/buyer/Orders";
 
-// ARTISAN
+// Artisan
 import ArtisanProducts from "./pages/artisan/Products";
 import AddProduct from "./pages/artisan/AddProduct";
 import ArtisanOrders from "./pages/artisan/Orders";
 
+// Layouts
+import BuyerLayout from "./layouts/BuyerLayout";
+import ArtisanLayout from "./layouts/ArtisanLayout";
+
 function App() {
   return (
-    <Router>
       <Routes>
 
-        {/* ===== PUBLIC ROUTES ===== */}
+        {/* ===== PUBLIC ===== */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/products" element={<AllProducts />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
 
-        {/* ===== BUYER ROUTES ===== */}
+        {/* ===== BUYER ===== */}
         <Route
-          path="/cart"
+          path="/buyer"
           element={
             <ProtectedRoute allowedRoles={["buyer"]}>
-              <CartPage />
+              <BuyerLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="products" element={<AllProducts />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
+          <Route path="orders" element={<BuyerOrders />} />
+        </Route>
 
+        {/* ===== ARTISAN ===== */}
         <Route
-          path="/wishlist"
-          element={
-            <ProtectedRoute allowedRoles={["buyer"]}>
-              <WishlistPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute allowedRoles={["buyer"]}>
-              <BuyerOrders />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ===== ARTISAN ROUTES ===== */}
-        <Route
-          path="/artisan/products"
+          path="/artisan"
           element={
             <ProtectedRoute allowedRoles={["artisan"]}>
-              <ArtisanProducts />
+              <ArtisanLayout />
             </ProtectedRoute>
           }
-        />
-
-        <Route
-          path="/artisan/products/add"
-          element={
-            <ProtectedRoute allowedRoles={["artisan"]}>
-              <AddProduct />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/artisan/orders"
-          element={
-            <ProtectedRoute allowedRoles={["artisan"]}>
-              <ArtisanOrders />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ===== LEGACY ROUTES (COMMENTED FOR MEMORY) ===== */}
-
-        {/*
-        Home
-        AboutUs
-        ContactUs
-        ForgotPassword
-        ForgotPasswordSecurity
-        RoleRedirect
-
-        BuyerDashboard
-        BuyerProfile
-
-        ArtisanDashboard
-        ArtisanProfile
-        ListingGuidelines
-        ArtisanPayments
-        ArtisanAnalytics
-
-        AdminDashboard
-        */}
+        >
+          <Route path="products" element={<ArtisanProducts />} />
+          <Route path="products/add" element={<AddProduct />} />
+          <Route path="orders" element={<ArtisanOrders />} />
+        </Route>
 
       </Routes>
-    </Router>
   );
 }
 
