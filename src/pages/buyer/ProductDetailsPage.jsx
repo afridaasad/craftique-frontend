@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/authContext";
+import { AuthContext } from "../../context/authContext";
 import {
   getProductDetails,
   addToCart,
@@ -18,6 +18,7 @@ const ProductDetailsPage = () => {
 
   const [addingCart, setAddingCart] = useState(false);
   const [addingWishlist, setAddingWishlist] = useState(false);
+  const [buying, setBuying] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -54,10 +55,45 @@ const ProductDetailsPage = () => {
       });
 
       alert("Added to cart!");
-    } catch {
-      alert("Failed to add to cart.");
+    } catch (err) {
+      if (err.response?.status === 400 || err.response?.status === 500) {
+        alert("Item already in cart.");
+      } else {
+        alert("Failed to add to cart.");
+      }
     } finally {
       setAddingCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    if (!isBuyer) {
+      alert("Only buyers can purchase products.");
+      return;
+    }
+
+    try {
+      setBuying(true);
+
+      await addToCart({
+        product_id: product.id,
+        quantity: 1,
+      });
+
+      navigate("/buyer/cart");
+    } catch (err) {
+      if (err.response?.status === 400 || err.response?.status === 500) {
+        navigate("/buyer/cart");
+      } else {
+        alert("Failed to proceed to checkout.");
+      }
+    } finally {
+      setBuying(false);
     }
   };
 
@@ -83,7 +119,7 @@ const ProductDetailsPage = () => {
     } catch (err) {
       alert(
         err.response?.data?.detail ||
-        "Already in wishlist or failed."
+          "Already in wishlist or failed."
       );
     } finally {
       setAddingWishlist(false);
@@ -121,6 +157,12 @@ const ProductDetailsPage = () => {
         {product.title}
       </h1>
 
+      {product.category && (
+        <p className="text-sm text-stone-500 mb-2">
+          Category: {product.category}
+        </p>
+      )}
+
       <p className="mb-6 text-stone-600">
         {product.description}
       </p>
@@ -129,7 +171,15 @@ const ProductDetailsPage = () => {
         ₹ {product.price}
       </p>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
+
+        <button
+          onClick={handleBuyNow}
+          disabled={buying}
+          className="bg-stone-900 text-white px-6 py-3 rounded hover:bg-stone-800 disabled:opacity-50"
+        >
+          {buying ? "Processing..." : "Buy Now"}
+        </button>
 
         <button
           onClick={handleAddToCart}

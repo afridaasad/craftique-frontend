@@ -38,3 +38,7 @@ export const addToCart = (data) =>
 // WISHLIST
 export const addToWishlist = (data) =>
   API.post("/buyer/wishlist/", data);
+
+// BUY NOW (single item quick checkout)
+export const buyNow = (data) =>
+  API.post("/buyer/cart/", data);
