@@ -26,3 +26,15 @@ export const getBuyerOrders = () =>
 // PRODUCTS
 export const getProducts = (params) =>
   API.get("/products/", { params });
+
+// PRODUCT DETAILS
+export const getProductDetails = (id) =>
+  API.get(`/products/${id}/`);
+
+// CART
+export const addToCart = (data) =>
+  API.post("/buyer/cart/", data);
+
+// WISHLIST
+export const addToWishlist = (data) =>
+  API.post("/buyer/wishlist/", data);
