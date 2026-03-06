@@ -11,6 +11,7 @@ const AllProducts = () => {
 
   const page = searchParams.get("page") || 1;
   const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
 
   const [searchInput, setSearchInput] = useState(search);
 
@@ -21,6 +22,7 @@ const AllProducts = () => {
       const res = await getProducts({
         page,
         search,
+        category,
       });
 
       setProducts(res.data.results || res.data);
@@ -33,13 +35,14 @@ const AllProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, search]);
+  }, [page, search, category]);
 
   const handleSearch = (e) => {
     e.preventDefault();
 
     setSearchParams({
       search: searchInput,
+      category,
       page: 1,
     });
   };
@@ -47,6 +50,7 @@ const AllProducts = () => {
   const goToPage = (p) => {
     setSearchParams({
       search,
+      category,
       page: p,
     });
   };
@@ -72,6 +76,46 @@ const AllProducts = () => {
         Handmade Products
       </h1>
 
+      {/* CATEGORY FILTERS */}
+      <div className="flex flex-wrap gap-3 mb-6">
+
+        <button
+          onClick={() => setSearchParams({ page: 1 })}
+          className="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100"
+        >
+          All
+        </button>
+
+        <button
+          onClick={() =>
+            setSearchParams({ category: "decor", page: 1 })
+          }
+          className="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100"
+        >
+          Decor
+        </button>
+
+        <button
+          onClick={() =>
+            setSearchParams({ category: "jewelry", page: 1 })
+          }
+          className="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100"
+        >
+          Jewelry
+        </button>
+
+        <button
+          onClick={() =>
+            setSearchParams({ category: "textile", page: 1 })
+          }
+          className="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100"
+        >
+          Textile
+        </button>
+
+      </div>
+
+      {/* SEARCH */}
       <form
         onSubmit={handleSearch}
         className="flex gap-3 mb-8"
@@ -84,13 +128,12 @@ const AllProducts = () => {
           className="flex-1 border border-stone-300 p-3 rounded focus:outline-none focus:ring-2 focus:ring-stone-400"
         />
 
-        <button
-          className="bg-stone-700 text-white px-6 py-3 rounded hover:bg-stone-800 transition"
-        >
+        <button className="bg-stone-700 text-white px-6 py-3 rounded hover:bg-stone-800 transition">
           Search
         </button>
       </form>
 
+      {/* PRODUCTS GRID */}
       {products.length === 0 ? (
         <p className="text-stone-600">
           No products found.
@@ -131,6 +174,7 @@ const AllProducts = () => {
 
           </div>
 
+          {/* PAGINATION */}
           <div className="flex justify-center gap-4 mt-10">
 
             <button
