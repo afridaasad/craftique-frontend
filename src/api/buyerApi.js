@@ -22,3 +22,7 @@ export const removeWishlistItem = (productId) =>
 // ORDERS
 export const getBuyerOrders = () =>
   API.get("/buyer/orders/");
+
+// PRODUCTS
+export const getProducts = (params) =>
+  API.get("/products/", { params });
