@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
-import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { loginUser, refreshToken } from "../api/authApi";
 
 export const AuthContext = createContext();
 
@@ -32,11 +32,7 @@ useEffect(() => {
 
       if (decoded.exp > currentTime) {
         setUser(decoded);
-      } else {
-        // Try refresh instead of logout
-        const response = await API.post("/auth/refresh/", {
-          refresh,
-        });
+        const response = await refreshToken(refresh);
 
         const { access: newAccess, refresh: newRefresh } =
           response.data;
@@ -60,10 +56,10 @@ useEffect(() => {
 
 const login = async (username, password) => {
   try {
-    const response = await API.post("/auth/login/", {
-      username,
-      password,
-    });
+    const response = await loginUser({
+  username,
+  password,
+});
 
     const { access, refresh } = response.data;
 
