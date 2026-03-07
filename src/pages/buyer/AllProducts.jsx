@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getProducts } from "../../api/buyerApi";
+import { getProducts, addToWishlist } from "../../api/buyerApi";
+import { AuthContext } from "../../context/AuthContext";
 
 const AllProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const { isAuthenticated, isBuyer } = useContext(AuthContext);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -53,6 +56,28 @@ const AllProducts = () => {
       category,
       page: p,
     });
+  };
+
+  const handleWishlist = async (productId) => {
+    if (!isAuthenticated) {
+      alert("Please login first.");
+      return;
+    }
+
+    if (!isBuyer) {
+      alert("Only buyers can add to wishlist.");
+      return;
+    }
+
+    try {
+      await addToWishlist({ product_id: productId });
+      alert("Added to wishlist!");
+    } catch (err) {
+      alert(
+        err.response?.data?.detail ||
+        "Already in wishlist."
+      );
+    }
   };
 
   if (loading)
@@ -143,33 +168,44 @@ const AllProducts = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
             {products.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                to={`/products/${product.id}`}
-                className="border border-stone-200 rounded-lg p-4 hover:shadow-lg transition bg-white"
+                className="border border-stone-200 rounded-lg p-4 hover:shadow-lg transition bg-white relative"
               >
 
-                {product.image && (
-                  <img
-                    src={product.image}
-                    alt={product.title}
-                    className="w-full h-48 object-cover rounded mb-3"
-                  />
-                )}
+                {/* Wishlist */}
+                <button
+  onClick={() => handleWishlist(product.id)}
+  className="absolute top-3 right-3 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow text-red-500 hover:scale-110 transition"
+>
+  ♥
+</button>
 
-                <h2 className="font-semibold text-stone-800">
-                  {product.title}
-                </h2>
+                <Link to={`/products/${product.id}`}>
 
-                <p className="text-stone-700 font-medium">
-                  ₹ {product.price}
-                </p>
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.title}
+                      className="w-full h-48 object-cover rounded mb-3"
+                    />
+                  )}
 
-                <p className="text-sm text-stone-500">
-                  {product.category}
-                </p>
+                  <h2 className="font-semibold text-stone-800">
+                    {product.title}
+                  </h2>
 
-              </Link>
+                  <p className="text-stone-700 font-medium">
+                    ₹ {product.price}
+                  </p>
+
+                  <p className="text-sm text-stone-500">
+                    {product.category}
+                  </p>
+
+                </Link>
+
+              </div>
             ))}
 
           </div>

@@ -42,3 +42,4 @@ export const addToWishlist = (data) =>
 // BUY NOW (single item quick checkout)
 export const buyNow = (data) =>
   API.post("/buyer/cart/", data);
+
