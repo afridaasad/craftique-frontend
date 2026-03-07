@@ -8,3 +8,6 @@ export const deleteArtisanProduct = (id) =>
 
 export const toggleProductActive = (id) =>
   API.patch(`/artisan/products/${id}/toggle-active/`);
+
+export const updateArtisanProduct = (id, data) =>
+  API.patch(`/artisan/products/${id}/`, data);

@@ -3,12 +3,19 @@ import { Link } from "react-router-dom";
 import {
   getArtisanProducts,
   deleteArtisanProduct,
+  updateArtisanProduct
 } from "../../api/artisanApi";
 
 const ArtisanProducts = () => {
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editStock, setEditStock] = useState("");
 
   const fetchProducts = async () => {
     try {
@@ -33,6 +40,35 @@ const ArtisanProducts = () => {
       setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch {
       alert("Failed to delete product.");
+    }
+  };
+
+  const openEditModal = (product) => {
+    setEditingProduct(product);
+    setEditTitle(product.title);
+    setEditPrice(product.price);
+    setEditStock(product.stock);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      await updateArtisanProduct(editingProduct.id, {
+        title: editTitle,
+        price: editPrice,
+        stock: editStock
+      });
+
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === editingProduct.id
+            ? { ...p, title: editTitle, price: editPrice, stock: editStock }
+            : p
+        )
+      );
+
+      setEditingProduct(null);
+    } catch {
+      alert("Failed to update product.");
     }
   };
 
@@ -103,12 +139,12 @@ const ArtisanProducts = () => {
 
               <div className="flex gap-2">
 
-                <Link
-                  to={`/artisan/products/${product.id}/edit`}
-                  className="flex-1 text-center border border-stone-400 px-3 py-1 rounded hover:bg-stone-100"
+                <button
+                  onClick={() => openEditModal(product)}
+                  className="flex-1 border border-stone-400 px-3 py-1 rounded hover:bg-stone-100"
                 >
                   Edit
-                </Link>
+                </button>
 
                 <button
                   onClick={() => handleDelete(product.id)}
@@ -124,6 +160,64 @@ const ArtisanProducts = () => {
 
         </div>
       )}
+
+      {/* EDIT MODAL */}
+      {editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+
+          <div className="bg-white p-6 rounded-lg w-96">
+
+            <h2 className="text-xl font-semibold mb-4">
+              Edit Product
+            </h2>
+
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full border p-2 mb-3 rounded"
+              placeholder="Title"
+            />
+
+            <input
+              type="number"
+              value={editPrice}
+              onChange={(e) => setEditPrice(e.target.value)}
+              className="w-full border p-2 mb-3 rounded"
+              placeholder="Price"
+            />
+
+            <input
+              type="number"
+              value={editStock}
+              onChange={(e) => setEditStock(e.target.value)}
+              className="w-full border p-2 mb-4 rounded"
+              placeholder="Stock"
+            />
+
+            <div className="flex justify-end gap-3">
+
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleUpdate}
+                className="bg-stone-700 text-white px-4 py-2 rounded"
+              >
+                Save
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 };
