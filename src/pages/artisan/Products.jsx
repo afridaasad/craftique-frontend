@@ -164,9 +164,7 @@ const ArtisanProducts = () => {
       {/* EDIT MODAL */}
       {editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-
           <div className="bg-white p-6 rounded-lg w-96">
-
             <h2 className="text-xl font-semibold mb-4">
               Edit Product
             </h2>
